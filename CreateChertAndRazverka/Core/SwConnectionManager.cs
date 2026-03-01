@@ -35,7 +35,8 @@ namespace CreateChertAndRazverka.Core
         /// <summary>
         /// Attempts to attach to an already-running SolidWorks instance.
         /// Step 1: Marshal.GetActiveObject via Reflection (versioned ProgID, then generic).
-        /// Step 2: Fallback to Type.GetTypeFromProgID + Activator.CreateInstance.
+        /// Step 2: If SLDWORKS process is running but ROT entry not found yet, wait 500 ms and retry.
+        /// Step 3: Never creates a new SolidWorks instance — returns false if connection fails.
         /// </summary>
         public bool TryConnect()
         {
@@ -47,7 +48,7 @@ namespace CreateChertAndRazverka.Core
             {
                 mi = typeof(Marshal).GetMethod("GetActiveObject", new Type[] { typeof(string) });
             }
-            catch { /* ignore */ }
+            catch { /* Reflection not available */ }
 
             if (mi != null)
             {
@@ -56,6 +57,7 @@ namespace CreateChertAndRazverka.Core
                 {
                     swObj = mi.Invoke(null, new object[] { SwProgIdVersioned });
                 }
+                catch (TargetInvocationException) { swObj = null; }
                 catch { swObj = null; }
 
                 // Then try generic ProgID
@@ -65,36 +67,66 @@ namespace CreateChertAndRazverka.Core
                     {
                         swObj = mi.Invoke(null, new object[] { SwProgIdGeneric });
                     }
+                    catch (TargetInvocationException) { swObj = null; }
                     catch { swObj = null; }
                 }
             }
 
-            // Step 2: Fallback — Type.GetTypeFromProgID + Activator.CreateInstance
-            // NOTE: This creates a NEW SolidWorks instance if none is running.
+            // Step 2: If SLDWORKS process is running but GetActiveObject failed,
+            // retry after a short delay (SW may not have registered in ROT yet).
+            if (swObj == null && mi != null)
+            {
+                try
+                {
+                    var procs    = System.Diagnostics.Process.GetProcessesByName("SLDWORKS");
+                    bool running = procs.Length > 0;
+                    foreach (var p in procs) p.Dispose();
+
+                    if (running)
+                    {
+                        System.Threading.Thread.Sleep(500);
+                        try
+                        {
+                            swObj = mi.Invoke(null, new object[] { SwProgIdGeneric });
+                        }
+                        catch (TargetInvocationException) { swObj = null; }
+                        catch { swObj = null; }
+                    }
+                }
+                catch { /* ignore process-enumeration errors */ }
+            }
+
+            // Step 3: SW is running but COM object is still unavailable — do NOT create a new instance.
             if (swObj == null)
             {
                 try
                 {
-                    Type t = Type.GetTypeFromProgID(SwProgIdGeneric);
-                    if (t != null)
-                    {
-                        swObj = Activator.CreateInstance(t);
-                        LogHelper.Log("SolidWorks запущен через Activator (новый экземпляр).", LogLevel.Warning);
-                    }
+                    var procs    = System.Diagnostics.Process.GetProcessesByName("SLDWORKS");
+                    bool running = procs.Length > 0;
+                    foreach (var p in procs) p.Dispose();
+
+                    if (running)
+                        LogHelper.Log("SolidWorks запущен, но COM-объект недоступен. Проверьте права администратора.", LogLevel.Warning);
                 }
-                catch { swObj = null; }
+                catch { /* ignore */ }
+
+                _isConnected = false;
+                return false;
             }
 
-            if (swObj != null)
+            _swApp       = swObj;
+            _isConnected = true;
+
+            // Ensure the existing SW instance is visible so ActiveDoc is accessible.
+            try
             {
-                _swApp       = swObj;
-                _isConnected = true;
-                LogHelper.Log("Подключено к SolidWorks 2022.", LogLevel.Success);
-                return true;
+                dynamic sw = (dynamic)_swApp;
+                sw.Visible = true;
             }
+            catch { /* ignore — Visible may not be settable in all configurations */ }
 
-            _isConnected = false;
-            return false;
+            LogHelper.Log("Подключено к SolidWorks 2022.", LogLevel.Success);
+            return true;
         }
 
         /// <summary>
@@ -143,6 +175,15 @@ namespace CreateChertAndRazverka.Core
                     catch (COMException) { ReleaseCom(); return null; }
                     catch (InvalidComObjectException) { ReleaseCom(); return null; }
                     catch { /* ignore */ }
+                }
+
+                // Verify the doc object is still alive before returning it.
+                if (doc != null)
+                {
+                    try { _ = (string)((dynamic)doc).GetTitle(); }
+                    catch (COMException) { return null; }              // doc is stale
+                    catch (InvalidComObjectException) { return null; } // doc was released
+                    catch { /* GetTitle may throw for unsaved/unnamed docs — still valid */ }
                 }
 
                 return doc;
