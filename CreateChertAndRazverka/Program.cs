@@ -9,6 +9,9 @@ namespace CreateChertAndRazverka
         [STAThread]
         static void Main(string[] args)
         {
+            // Регистрируем резолвер ПЕРВЫМ — до любого использования SolidWorks типов
+            InteropResolver.Register();
+
             if (!AdminHelper.IsRunningAsAdmin())
             {
                 if (!Array.Exists(args, a => a == "--restarted"))

@@ -80,6 +80,7 @@
     <Compile Include="Core\TitleBlockManager.cs" />
     <Compile Include="Helpers\AdminHelper.cs" />
     <Compile Include="Helpers\FileHelper.cs" />
+    <Compile Include="Helpers\InteropResolver.cs" />
     <Compile Include="Helpers\LogHelper.cs" />
     <Compile Include="Helpers\PdfExporter.cs" />
     <Compile Include="MainForm.cs">
@@ -112,10 +113,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.manifest" />
+    <None Include="CopyInteropDlls.bat" />
+    <None Include="InteropPaths.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
+  <PropertyGroup>
+    <PreBuildEvent>call "$(ProjectDir)CopyInteropDlls.bat"</PreBuildEvent>
+  </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
