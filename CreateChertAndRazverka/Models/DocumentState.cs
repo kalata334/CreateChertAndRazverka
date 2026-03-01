@@ -15,7 +15,7 @@ namespace CreateChertAndRazverka.Models
         public string FileName    { get; set; } = "";
         public bool IsSheetMetal  { get; set; } = false;
 
-        public string TypeDisplay
+        public string TypeLabel
         {
             get
             {

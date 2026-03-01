@@ -152,7 +152,7 @@ namespace CreateChertAndRazverka
                 ? "(нет открытого документа)"
                 : state.FileName;
 
-            lblDocumentType.Text = state.TypeDisplay;
+            lblDocumentType.Text = state.TypeLabel;
             lblDocumentPath.Text = string.IsNullOrEmpty(state.FilePath)
                 ? ""
                 : state.FilePath;
@@ -668,13 +668,13 @@ namespace CreateChertAndRazverka
             };
         }
 
-        private SheetFormat GetSelectedSheetFormat()
+        private string GetSelectedSheetFormat()
         {
-            if (rbA3.Checked) return SheetFormat.A3;
-            if (rbA2.Checked) return SheetFormat.A2;
-            if (rbA1.Checked) return SheetFormat.A1;
-            if (rbA0.Checked) return SheetFormat.A0;
-            return SheetFormat.A4;
+            if (rbA3.Checked) return "A3";
+            if (rbA2.Checked) return "A2";
+            if (rbA1.Checked) return "A1";
+            if (rbA0.Checked) return "A0";
+            return "A4";
         }
     }
 }

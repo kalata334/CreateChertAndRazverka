@@ -9,14 +9,6 @@ namespace CreateChertAndRazverka.Models
         Error
     }
 
-    public class SingleResult
-    {
-        public string ComponentName { get; set; } = "";
-        public ResultStatus Status  { get; set; } = ResultStatus.Success;
-        public string Message       { get; set; } = "";
-        public string OutputFile    { get; set; } = "";
-    }
-
     public class GenerationResult
     {
         public List<SingleResult> Results { get; } = new List<SingleResult>();

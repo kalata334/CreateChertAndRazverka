@@ -107,7 +107,7 @@ namespace CreateChertAndRazverka.Core
                     ComponentName = Path.GetFileName(partFilePath),
                     Status        = ResultStatus.Success,
                     Message       = "Чертёж создан",
-                    OutputFile    = outputPath
+                    OutputPath    = outputPath
                 };
             }
             catch (Exception ex)
