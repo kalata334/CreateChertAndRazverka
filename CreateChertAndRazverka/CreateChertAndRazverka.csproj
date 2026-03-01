@@ -43,6 +43,19 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <!--
+      SolidWorks Interop DLLs are NOT included in the repository.
+      The application uses late-binding (dynamic) to call SolidWorks COM API,
+      so these assemblies are not required at compile time.
+
+      To use early-binding (optional), copy the DLLs from your SolidWorks 2022
+      installation into the References\ folder:
+        C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\api\redist\
+          SolidWorks.Interop.sldworks.dll
+          SolidWorks.Interop.swconst.dll
+          SolidWorks.Interop.swpublished.dll
+      Then uncomment the references below:
+
     <Reference Include="SolidWorks.Interop.sldworks">
       <HintPath>References\SolidWorks.Interop.sldworks.dll</HintPath>
       <EmbedInteropTypes>False</EmbedInteropTypes>
@@ -55,6 +68,7 @@
       <HintPath>References\SolidWorks.Interop.swpublished.dll</HintPath>
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
+    -->
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\AssemblyDrawingCreator.cs" />
