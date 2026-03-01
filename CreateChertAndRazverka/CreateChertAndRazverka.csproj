@@ -83,6 +83,7 @@
     <Compile Include="Helpers\InteropResolver.cs" />
     <Compile Include="Helpers\LogHelper.cs" />
     <Compile Include="Helpers\PdfExporter.cs" />
+    <Compile Include="Helpers\SettingsManager.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

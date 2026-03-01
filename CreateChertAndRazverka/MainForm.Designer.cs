@@ -44,6 +44,22 @@ namespace CreateChertAndRazverka
             this.rbA1                = new System.Windows.Forms.RadioButton();
             this.rbA0                = new System.Windows.Forms.RadioButton();
 
+            this.grpTemplates                 = new System.Windows.Forms.GroupBox();
+            this.lblDrawingTemplateCap        = new System.Windows.Forms.Label();
+            this.txtDrawingTemplate           = new System.Windows.Forms.TextBox();
+            this.btnBrowseDrawingTemplate     = new System.Windows.Forms.Button();
+            this.btnEditDrawingTemplate       = new System.Windows.Forms.Button();
+            this.lblFlatPatternTemplateCap    = new System.Windows.Forms.Label();
+            this.txtFlatPatternTemplate       = new System.Windows.Forms.TextBox();
+            this.btnBrowseFlatPatternTemplate = new System.Windows.Forms.Button();
+            this.btnEditFlatPatternTemplate   = new System.Windows.Forms.Button();
+            this.lblAssemblyTemplateCap       = new System.Windows.Forms.Label();
+            this.txtAssemblyTemplate          = new System.Windows.Forms.TextBox();
+            this.btnBrowseAssemblyTemplate    = new System.Windows.Forms.Button();
+            this.btnEditAssemblyTemplate      = new System.Windows.Forms.Button();
+            this.btnSaveTemplates             = new System.Windows.Forms.Button();
+            this.btnResetTemplates            = new System.Windows.Forms.Button();
+
             this.grpComponents       = new System.Windows.Forms.GroupBox();
             this.pnlComponentsTop    = new System.Windows.Forms.Panel();
             this.btnSelectAll        = new System.Windows.Forms.Button();
@@ -244,11 +260,125 @@ namespace CreateChertAndRazverka
             this.grpFormat.ResumeLayout(false);
 
             // ================================================================
+            // grpTemplates — Drawing template selection
+            // ================================================================
+            this.grpTemplates.SuspendLayout();
+            this.grpTemplates.Text     = "Шаблоны чертежей";
+            this.grpTemplates.Location = new System.Drawing.Point(8, 290);
+            this.grpTemplates.Size     = new System.Drawing.Size(784, 140);
+            this.grpTemplates.Anchor   = System.Windows.Forms.AnchorStyles.Top
+                                       | System.Windows.Forms.AnchorStyles.Left
+                                       | System.Windows.Forms.AnchorStyles.Right;
+
+            // Row 1 — Drawing template
+            this.lblDrawingTemplateCap.Text      = "Шаблон деталей:";
+            this.lblDrawingTemplateCap.Location  = new System.Drawing.Point(8, 24);
+            this.lblDrawingTemplateCap.Size      = new System.Drawing.Size(155, 22);
+            this.lblDrawingTemplateCap.AutoSize  = false;
+            this.lblDrawingTemplateCap.Font      = new System.Drawing.Font("Segoe UI", 9, System.Drawing.FontStyle.Bold);
+
+            this.txtDrawingTemplate.Location    = new System.Drawing.Point(168, 22);
+            this.txtDrawingTemplate.Size        = new System.Drawing.Size(370, 23);
+            this.txtDrawingTemplate.ReadOnly    = true;
+            this.txtDrawingTemplate.Anchor      = System.Windows.Forms.AnchorStyles.Left
+                                                | System.Windows.Forms.AnchorStyles.Right
+                                                | System.Windows.Forms.AnchorStyles.Top;
+
+            this.btnBrowseDrawingTemplate.Text     = "📁";
+            this.btnBrowseDrawingTemplate.Location = new System.Drawing.Point(544, 21);
+            this.btnBrowseDrawingTemplate.Size     = new System.Drawing.Size(32, 25);
+            this.btnBrowseDrawingTemplate.Anchor   = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            this.btnBrowseDrawingTemplate.Click   += new System.EventHandler(this.btnBrowseDrawingTemplate_Click);
+
+            this.btnEditDrawingTemplate.Text     = "✏️ Изменить";
+            this.btnEditDrawingTemplate.Location = new System.Drawing.Point(582, 21);
+            this.btnEditDrawingTemplate.Size     = new System.Drawing.Size(95, 25);
+            this.btnEditDrawingTemplate.Anchor   = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            // "Изменить" intentionally opens the same file dialog as the browse button
+            this.btnEditDrawingTemplate.Click   += new System.EventHandler(this.btnBrowseDrawingTemplate_Click);
+
+            // Row 2 — Flat pattern template
+            this.lblFlatPatternTemplateCap.Text      = "Шаблон развёрток:";
+            this.lblFlatPatternTemplateCap.Location  = new System.Drawing.Point(8, 52);
+            this.lblFlatPatternTemplateCap.Size      = new System.Drawing.Size(155, 22);
+            this.lblFlatPatternTemplateCap.AutoSize  = false;
+            this.lblFlatPatternTemplateCap.Font      = new System.Drawing.Font("Segoe UI", 9, System.Drawing.FontStyle.Bold);
+
+            this.txtFlatPatternTemplate.Location    = new System.Drawing.Point(168, 50);
+            this.txtFlatPatternTemplate.Size        = new System.Drawing.Size(370, 23);
+            this.txtFlatPatternTemplate.ReadOnly    = true;
+            this.txtFlatPatternTemplate.Anchor      = System.Windows.Forms.AnchorStyles.Left
+                                                    | System.Windows.Forms.AnchorStyles.Right
+                                                    | System.Windows.Forms.AnchorStyles.Top;
+
+            this.btnBrowseFlatPatternTemplate.Text     = "📁";
+            this.btnBrowseFlatPatternTemplate.Location = new System.Drawing.Point(544, 49);
+            this.btnBrowseFlatPatternTemplate.Size     = new System.Drawing.Size(32, 25);
+            this.btnBrowseFlatPatternTemplate.Anchor   = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            this.btnBrowseFlatPatternTemplate.Click   += new System.EventHandler(this.btnBrowseFlatPatternTemplate_Click);
+
+            this.btnEditFlatPatternTemplate.Text     = "✏️ Изменить";
+            this.btnEditFlatPatternTemplate.Location = new System.Drawing.Point(582, 49);
+            this.btnEditFlatPatternTemplate.Size     = new System.Drawing.Size(95, 25);
+            this.btnEditFlatPatternTemplate.Anchor   = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            // "Изменить" intentionally opens the same file dialog as the browse button
+            this.btnEditFlatPatternTemplate.Click   += new System.EventHandler(this.btnBrowseFlatPatternTemplate_Click);
+
+            // Row 3 — Assembly drawing template
+            this.lblAssemblyTemplateCap.Text      = "Шаблон сборок:";
+            this.lblAssemblyTemplateCap.Location  = new System.Drawing.Point(8, 80);
+            this.lblAssemblyTemplateCap.Size      = new System.Drawing.Size(155, 22);
+            this.lblAssemblyTemplateCap.AutoSize  = false;
+            this.lblAssemblyTemplateCap.Font      = new System.Drawing.Font("Segoe UI", 9, System.Drawing.FontStyle.Bold);
+
+            this.txtAssemblyTemplate.Location    = new System.Drawing.Point(168, 78);
+            this.txtAssemblyTemplate.Size        = new System.Drawing.Size(370, 23);
+            this.txtAssemblyTemplate.ReadOnly    = true;
+            this.txtAssemblyTemplate.Anchor      = System.Windows.Forms.AnchorStyles.Left
+                                                 | System.Windows.Forms.AnchorStyles.Right
+                                                 | System.Windows.Forms.AnchorStyles.Top;
+
+            this.btnBrowseAssemblyTemplate.Text     = "📁";
+            this.btnBrowseAssemblyTemplate.Location = new System.Drawing.Point(544, 77);
+            this.btnBrowseAssemblyTemplate.Size     = new System.Drawing.Size(32, 25);
+            this.btnBrowseAssemblyTemplate.Anchor   = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            this.btnBrowseAssemblyTemplate.Click   += new System.EventHandler(this.btnBrowseAssemblyTemplate_Click);
+
+            this.btnEditAssemblyTemplate.Text     = "✏️ Изменить";
+            this.btnEditAssemblyTemplate.Location = new System.Drawing.Point(582, 77);
+            this.btnEditAssemblyTemplate.Size     = new System.Drawing.Size(95, 25);
+            this.btnEditAssemblyTemplate.Anchor   = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            // "Изменить" intentionally opens the same file dialog as the browse button
+            this.btnEditAssemblyTemplate.Click   += new System.EventHandler(this.btnBrowseAssemblyTemplate_Click);
+
+            // Row 4 — Save / Reset buttons
+            this.btnSaveTemplates.Text     = "💾 Сохранить шаблоны";
+            this.btnSaveTemplates.Location = new System.Drawing.Point(8, 108);
+            this.btnSaveTemplates.Size     = new System.Drawing.Size(175, 26);
+            this.btnSaveTemplates.Click   += new System.EventHandler(this.btnSaveTemplates_Click);
+
+            this.btnResetTemplates.Text     = "🔄 Сбросить по умолчанию";
+            this.btnResetTemplates.Location = new System.Drawing.Point(190, 108);
+            this.btnResetTemplates.Size     = new System.Drawing.Size(195, 26);
+            this.btnResetTemplates.Click   += new System.EventHandler(this.btnResetTemplates_Click);
+
+            this.grpTemplates.Controls.AddRange(new System.Windows.Forms.Control[] {
+                this.lblDrawingTemplateCap,     this.txtDrawingTemplate,
+                this.btnBrowseDrawingTemplate,  this.btnEditDrawingTemplate,
+                this.lblFlatPatternTemplateCap, this.txtFlatPatternTemplate,
+                this.btnBrowseFlatPatternTemplate, this.btnEditFlatPatternTemplate,
+                this.lblAssemblyTemplateCap,    this.txtAssemblyTemplate,
+                this.btnBrowseAssemblyTemplate, this.btnEditAssemblyTemplate,
+                this.btnSaveTemplates,          this.btnResetTemplates
+            });
+            this.grpTemplates.ResumeLayout(false);
+
+            // ================================================================
             // grpComponents — list
             // ================================================================
             this.grpComponents.SuspendLayout();
             this.grpComponents.Text     = "Список компонентов";
-            this.grpComponents.Location = new System.Drawing.Point(8, 290);
+            this.grpComponents.Location = new System.Drawing.Point(8, 436);
             this.grpComponents.Size     = new System.Drawing.Size(784, 230);
             this.grpComponents.Anchor   = System.Windows.Forms.AnchorStyles.Top
                                         | System.Windows.Forms.AnchorStyles.Left
@@ -345,7 +475,7 @@ namespace CreateChertAndRazverka
             // ================================================================
             this.grpOptions.SuspendLayout();
             this.grpOptions.Text     = "Параметры";
-            this.grpOptions.Location = new System.Drawing.Point(8, 530);
+            this.grpOptions.Location = new System.Drawing.Point(8, 676);
             this.grpOptions.Size     = new System.Drawing.Size(784, 54);
             this.grpOptions.Anchor   = System.Windows.Forms.AnchorStyles.Bottom
                                      | System.Windows.Forms.AnchorStyles.Left
@@ -380,7 +510,7 @@ namespace CreateChertAndRazverka
             // ================================================================
             // pnlActions
             // ================================================================
-            this.pnlActions.Location = new System.Drawing.Point(8, 590);
+            this.pnlActions.Location = new System.Drawing.Point(8, 736);
             this.pnlActions.Size     = new System.Drawing.Size(784, 38);
             this.pnlActions.Anchor   = System.Windows.Forms.AnchorStyles.Bottom
                                      | System.Windows.Forms.AnchorStyles.Left
@@ -419,7 +549,7 @@ namespace CreateChertAndRazverka
             // ================================================================
             // Progress
             // ================================================================
-            this.progressBar.Location = new System.Drawing.Point(8, 634);
+            this.progressBar.Location = new System.Drawing.Point(8, 780);
             this.progressBar.Size     = new System.Drawing.Size(680, 20);
             this.progressBar.Anchor   = System.Windows.Forms.AnchorStyles.Bottom
                                       | System.Windows.Forms.AnchorStyles.Left
@@ -428,7 +558,7 @@ namespace CreateChertAndRazverka
             this.progressBar.Maximum  = 100;
 
             this.lblProgress.Text     = "";
-            this.lblProgress.Location = new System.Drawing.Point(698, 636);
+            this.lblProgress.Location = new System.Drawing.Point(698, 782);
             this.lblProgress.Size     = new System.Drawing.Size(100, 18);
             this.lblProgress.Anchor   = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
 
@@ -437,7 +567,7 @@ namespace CreateChertAndRazverka
             // ================================================================
             this.grpLog.SuspendLayout();
             this.grpLog.Text     = "Лог — CreateChert And Razverka:";
-            this.grpLog.Location = new System.Drawing.Point(8, 660);
+            this.grpLog.Location = new System.Drawing.Point(8, 806);
             this.grpLog.Size     = new System.Drawing.Size(784, 150);
             this.grpLog.Anchor   = System.Windows.Forms.AnchorStyles.Bottom
                                  | System.Windows.Forms.AnchorStyles.Left
@@ -493,8 +623,8 @@ namespace CreateChertAndRazverka
             // ================================================================
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode       = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize          = new System.Drawing.Size(800, 840);
-            this.MinimumSize         = new System.Drawing.Size(820, 860);
+            this.ClientSize          = new System.Drawing.Size(800, 986);
+            this.MinimumSize         = new System.Drawing.Size(820, 1006);
             this.Text                = "CreateChert And Razverka";
             this.Font                = new System.Drawing.Font("Segoe UI", 9);
             this.StartPosition       = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -506,6 +636,7 @@ namespace CreateChertAndRazverka
                 this.grpAuthor,
                 this.grpFolder,
                 this.grpFormat,
+                this.grpTemplates,
                 this.grpComponents,
                 this.grpOptions,
                 this.pnlActions,
@@ -544,6 +675,22 @@ namespace CreateChertAndRazverka
         private System.Windows.Forms.RadioButton rbA2;
         private System.Windows.Forms.RadioButton rbA1;
         private System.Windows.Forms.RadioButton rbA0;
+
+        private System.Windows.Forms.GroupBox grpTemplates;
+        private System.Windows.Forms.Label    lblDrawingTemplateCap;
+        private System.Windows.Forms.TextBox  txtDrawingTemplate;
+        private System.Windows.Forms.Button   btnBrowseDrawingTemplate;
+        private System.Windows.Forms.Button   btnEditDrawingTemplate;
+        private System.Windows.Forms.Label    lblFlatPatternTemplateCap;
+        private System.Windows.Forms.TextBox  txtFlatPatternTemplate;
+        private System.Windows.Forms.Button   btnBrowseFlatPatternTemplate;
+        private System.Windows.Forms.Button   btnEditFlatPatternTemplate;
+        private System.Windows.Forms.Label    lblAssemblyTemplateCap;
+        private System.Windows.Forms.TextBox  txtAssemblyTemplate;
+        private System.Windows.Forms.Button   btnBrowseAssemblyTemplate;
+        private System.Windows.Forms.Button   btnEditAssemblyTemplate;
+        private System.Windows.Forms.Button   btnSaveTemplates;
+        private System.Windows.Forms.Button   btnResetTemplates;
 
         private System.Windows.Forms.GroupBox       grpComponents;
         private System.Windows.Forms.Panel          pnlComponentsTop;

@@ -43,14 +43,26 @@ namespace CreateChertAndRazverka
 
             LogHelper.Initialize(richTextBoxLog);
 
-            // Restore saved output folder
-            string savedFolder = Properties.Settings.Default.OutputFolder;
+            // Load persisted settings (both legacy Properties.Settings and new SettingsManager)
+            var appSettings = SettingsManager.Load();
+
+            // Restore saved output folder (prefer new settings, fall back to legacy)
+            string savedFolder = !string.IsNullOrEmpty(appSettings.OutputFolder)
+                ? appSettings.OutputFolder
+                : Properties.Settings.Default.OutputFolder;
             if (!string.IsNullOrEmpty(savedFolder))
                 txtOutputFolder.Text = savedFolder;
 
-            string savedAuthor = Properties.Settings.Default.Author;
+            string savedAuthor = !string.IsNullOrEmpty(appSettings.AuthorName)
+                ? appSettings.AuthorName
+                : Properties.Settings.Default.Author;
             if (!string.IsNullOrEmpty(savedAuthor))
                 txtAuthor.Text = savedAuthor;
+
+            // Restore template paths
+            txtDrawingTemplate.Text     = appSettings.DrawingTemplatePath;
+            txtFlatPatternTemplate.Text = appSettings.FlatPatternTemplatePath;
+            txtAssemblyTemplate.Text    = appSettings.AssemblyDrawingTemplatePath;
 
             UpdateDocumentPanel(DocumentState.Empty);
             UpdateButtonStates();
@@ -73,10 +85,12 @@ namespace CreateChertAndRazverka
             _monitor.Dispose();
             _connector.Dispose();
 
-            // Persist settings
+            // Persist settings (both legacy and new)
             Properties.Settings.Default.OutputFolder = txtOutputFolder.Text;
             Properties.Settings.Default.Author       = txtAuthor.Text;
             Properties.Settings.Default.Save();
+
+            SaveTemplateSettings();
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -364,6 +378,64 @@ namespace CreateChertAndRazverka
 
         private void btnClearLog_Click(object sender, EventArgs e) => LogHelper.Clear();
 
+        private void btnBrowseDrawingTemplate_Click(object sender, EventArgs e)
+        {
+            string path = BrowseTemplateFile(txtDrawingTemplate.Text);
+            if (path != null) txtDrawingTemplate.Text = path;
+        }
+
+        private void btnBrowseFlatPatternTemplate_Click(object sender, EventArgs e)
+        {
+            string path = BrowseTemplateFile(txtFlatPatternTemplate.Text);
+            if (path != null) txtFlatPatternTemplate.Text = path;
+        }
+
+        private void btnBrowseAssemblyTemplate_Click(object sender, EventArgs e)
+        {
+            string path = BrowseTemplateFile(txtAssemblyTemplate.Text);
+            if (path != null) txtAssemblyTemplate.Text = path;
+        }
+
+        private void btnSaveTemplates_Click(object sender, EventArgs e)
+        {
+            SaveTemplateSettings();
+            LogHelper.Log("Шаблоны сохранены.", LogLevel.Success);
+        }
+
+        private void btnResetTemplates_Click(object sender, EventArgs e)
+        {
+            txtDrawingTemplate.Text     = "";
+            txtFlatPatternTemplate.Text = "";
+            txtAssemblyTemplate.Text    = "";
+            SaveTemplateSettings();
+            LogHelper.Log("Шаблоны сброшены — будут использованы стандартные шаблоны SolidWorks.", LogLevel.Info);
+        }
+
+        private string BrowseTemplateFile(string currentPath)
+        {
+            using (var dlg = new OpenFileDialog())
+            {
+                dlg.Title  = "Выберите шаблон чертежа";
+                dlg.Filter = "Шаблоны чертежей (*.drwdot)|*.drwdot"
+                           + "|Форматы листов (*.slddrt)|*.slddrt"
+                           + "|Все файлы (*.*)|*.*";
+                if (!string.IsNullOrEmpty(currentPath) && File.Exists(currentPath))
+                    dlg.InitialDirectory = Path.GetDirectoryName(currentPath);
+                return dlg.ShowDialog(this) == DialogResult.OK ? dlg.FileName : null;
+            }
+        }
+
+        private void SaveTemplateSettings()
+        {
+            var settings = SettingsManager.Load();
+            settings.DrawingTemplatePath         = txtDrawingTemplate.Text.Trim();
+            settings.FlatPatternTemplatePath     = txtFlatPatternTemplate.Text.Trim();
+            settings.AssemblyDrawingTemplatePath = txtAssemblyTemplate.Text.Trim();
+            settings.AuthorName                  = txtAuthor.Text.Trim();
+            settings.OutputFolder                = txtOutputFolder.Text.Trim();
+            SettingsManager.Save(settings);
+        }
+
         // ════════════════════════════════════════════════════════════════════
         // Generation actions
         // ════════════════════════════════════════════════════════════════════
@@ -567,13 +639,16 @@ namespace CreateChertAndRazverka
         {
             return new DrawingSettings
             {
-                OutputFolder      = txtOutputFolder.Text.Trim(),
-                Author            = txtAuthor.Text.Trim(),
-                SheetFormat       = GetSelectedSheetFormat(),
-                CreateDrawings    = chkCreateDrawings.Checked,
-                CreateFlatPatterns = chkCreateFlatPatterns.Checked,
-                ExportToPdf       = chkExportPdf.Checked,
-                AutoDimensions    = chkAutoDimensions.Checked
+                OutputFolder              = txtOutputFolder.Text.Trim(),
+                Author                    = txtAuthor.Text.Trim(),
+                SheetFormat               = GetSelectedSheetFormat(),
+                CreateDrawings            = chkCreateDrawings.Checked,
+                CreateFlatPatterns        = chkCreateFlatPatterns.Checked,
+                ExportToPdf               = chkExportPdf.Checked,
+                AutoDimensions            = chkAutoDimensions.Checked,
+                DrawingTemplatePath         = txtDrawingTemplate.Text.Trim(),
+                FlatPatternTemplatePath     = txtFlatPatternTemplate.Text.Trim(),
+                AssemblyDrawingTemplatePath = txtAssemblyTemplate.Text.Trim()
             };
         }
 

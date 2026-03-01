@@ -56,7 +56,7 @@ namespace CreateChertAndRazverka.Core
                 // swDwgPaperSizes_e value from settings
                 int paperSize = settings.GetSwPaperSize();
                 dynamic drawingDoc = swApp.NewDocument(
-                    GetDrawingTemplatePath(swApp),
+                    GetDrawingTemplatePath(swApp, settings.DrawingTemplatePath),
                     paperSize,
                     0.297, 0.210); // default A4 sheet dimensions (overridden by template)
 
@@ -143,8 +143,11 @@ namespace CreateChertAndRazverka.Core
             }
         }
 
-        private string GetDrawingTemplatePath(dynamic swApp)
+        private string GetDrawingTemplatePath(dynamic swApp, string userTemplate)
         {
+            if (!string.IsNullOrEmpty(userTemplate) && File.Exists(userTemplate))
+                return userTemplate;
+
             try
             {
                 // swUserPreferenceStringValue_e.swDefaultTemplateDrawing = 13

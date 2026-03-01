@@ -27,33 +27,53 @@ namespace CreateChertAndRazverka.Core
         /// <summary>
         /// Attempts to attach to an already running SolidWorks instance.
         /// Does NOT start SolidWorks if it is not running.
+        /// Tries versioned ProgID first, then falls back to the generic ProgID.
         /// </summary>
         public bool TryConnect()
         {
             try
             {
-                Type swType = Type.GetTypeFromProgID(SwProgId);
-                if (swType == null)
-                {
-                    LogHelper.Log("SolidWorks 2022 не зарегистрирован (ProgID не найден).", LogLevel.Warning);
-                    return false;
-                }
-
                 _swApp = Marshal.GetActiveObject(SwProgId);
                 LogHelper.Log("Подключено к SolidWorks 2022.", LogLevel.Success);
                 return true;
             }
-            catch (COMException)
+            catch (COMException) { /* try fallback */ }
+            catch (Exception ex)
             {
-                _swApp = null;
-                return false;
+                LogHelper.Log("Ошибка подключения к SolidWorks (versioned): " + ex.Message, LogLevel.Warning);
             }
+
+            // Fallback: try generic ProgID (works when program runs without elevation)
+            try
+            {
+                _swApp = Marshal.GetActiveObject("SldWorks.Application");
+                LogHelper.Log("Подключено к SolidWorks (generic ProgID).", LogLevel.Success);
+                return true;
+            }
+            catch (COMException) { /* not running */ }
             catch (Exception ex)
             {
                 LogHelper.Log("Ошибка подключения к SolidWorks: " + ex.Message, LogLevel.Error);
-                _swApp = null;
-                return false;
             }
+
+            // Last fallback: check if SLDWORKS process is running and try again
+            try
+            {
+                var swProcesses = System.Diagnostics.Process.GetProcessesByName("SLDWORKS");
+                bool isRunning = swProcesses.Length > 0;
+                foreach (var p in swProcesses) p.Dispose();
+
+                if (isRunning)
+                {
+                    _swApp = Marshal.GetActiveObject("SldWorks.Application");
+                    LogHelper.Log("Подключено к SolidWorks (через процесс).", LogLevel.Success);
+                    return true;
+                }
+            }
+            catch { /* ignore */ }
+
+            _swApp = null;
+            return false;
         }
 
         /// <summary>
