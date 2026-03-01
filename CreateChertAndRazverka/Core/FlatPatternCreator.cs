@@ -65,7 +65,7 @@ namespace CreateChertAndRazverka.Core
                     return Error(partFilePath, "Не удалось создать документ развёртки.");
 
                 // Insert flat-pattern view
-                string partPath = partDoc.GetPathName();
+                string partPath = (string)partDoc.GetPathName();
                 dynamic fpView = drawingDoc.CreateDrawViewFromModelView3(
                     partPath, "Flat-Pattern1", 0.12, 0.18, 0);
 
@@ -132,7 +132,7 @@ namespace CreateChertAndRazverka.Core
                 dynamic feat = partDoc.FirstFeature();
                 while (feat != null)
                 {
-                    string typeName = feat.GetTypeName2();
+                    string typeName = (string)feat.GetTypeName2();
                     if (typeName == "SMFlatPattern")
                     {
                         feat.SetSuppression2(1, 2, null); // unsuppress
