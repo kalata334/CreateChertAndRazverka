@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using CreateChertAndRazverka.Helpers;
 
@@ -33,98 +34,94 @@ namespace CreateChertAndRazverka.Core
 
         /// <summary>
         /// Attempts to attach to an already-running SolidWorks instance.
-        /// Uses the same three-tier fallback as the original connector.
+        /// Step 1: Marshal.GetActiveObject via Reflection (versioned ProgID, then generic).
+        /// Step 2: Fallback to Type.GetTypeFromProgID + Activator.CreateInstance.
         /// </summary>
         public bool TryConnect()
         {
-            // Tier 1: versioned ProgID (SolidWorks 2022)
+            object swObj = null;
+
+            // Step 1: Marshal.GetActiveObject via Reflection
+            MethodInfo mi = null;
             try
             {
-                _swApp       = Marshal.GetActiveObject(SwProgIdVersioned);
+                mi = typeof(Marshal).GetMethod("GetActiveObject", new Type[] { typeof(string) });
+            }
+            catch { /* ignore */ }
+
+            if (mi != null)
+            {
+                // First try versioned ProgID (SolidWorks 2022)
+                try
+                {
+                    swObj = mi.Invoke(null, new object[] { SwProgIdVersioned });
+                }
+                catch { swObj = null; }
+
+                // Then try generic ProgID
+                if (swObj == null)
+                {
+                    try
+                    {
+                        swObj = mi.Invoke(null, new object[] { SwProgIdGeneric });
+                    }
+                    catch { swObj = null; }
+                }
+            }
+
+            // Step 2: Fallback — Type.GetTypeFromProgID + Activator.CreateInstance
+            // NOTE: This creates a NEW SolidWorks instance if none is running.
+            if (swObj == null)
+            {
+                try
+                {
+                    Type t = Type.GetTypeFromProgID(SwProgIdGeneric);
+                    if (t != null)
+                    {
+                        swObj = Activator.CreateInstance(t);
+                        LogHelper.Log("SolidWorks запущен через Activator (новый экземпляр).", LogLevel.Warning);
+                    }
+                }
+                catch { swObj = null; }
+            }
+
+            if (swObj != null)
+            {
+                _swApp       = swObj;
                 _isConnected = true;
                 LogHelper.Log("Подключено к SolidWorks 2022.", LogLevel.Success);
                 return true;
             }
-            catch (COMException) { /* try fallback */ }
-            catch (Exception ex)
-            {
-                LogHelper.Log("Ошибка подключения к SolidWorks (versioned): " + ex.Message, LogLevel.Warning);
-            }
 
-            // Tier 2: generic ProgID
-            try
-            {
-                _swApp       = Marshal.GetActiveObject(SwProgIdGeneric);
-                _isConnected = true;
-                LogHelper.Log("Подключено к SolidWorks (generic ProgID).", LogLevel.Success);
-                return true;
-            }
-            catch (COMException) { /* not running */ }
-            catch (Exception ex)
-            {
-                LogHelper.Log("Ошибка подключения к SolidWorks: " + ex.Message, LogLevel.Error);
-            }
-
-            // Tier 3: verify process is running, then try generic ProgID again
-            try
-            {
-                var  procs     = System.Diagnostics.Process.GetProcessesByName("SLDWORKS");
-                bool isRunning = procs.Length > 0;
-                foreach (var p in procs) p.Dispose();
-
-                if (isRunning)
-                {
-                    _swApp       = Marshal.GetActiveObject(SwProgIdGeneric);
-                    _isConnected = true;
-                    LogHelper.Log("Подключено к SolidWorks (через процесс).", LogLevel.Success);
-                    return true;
-                }
-            }
-            catch { /* ignore */ }
-
-            _swApp       = null;
             _isConnected = false;
             return false;
         }
 
         /// <summary>
-        /// Probes the COM object by reading the <c>Visible</c> property.
+        /// Probes the COM object by calling <c>GetProcessID()</c>.
         /// Resets the connection state when the object is stale.
         /// </summary>
         public bool VerifyConnection()
         {
-            if (!_isConnected || _swApp == null)
-            {
-                _isConnected = false;
-                return false;
-            }
-
+            if (_swApp == null || !_isConnected) return false;
             try
             {
-                // Reading Visible is a lightweight probe that will throw if SW went away.
-                ((dynamic)_swApp).Visible.ToString();
+                // Probe the COM object — if it's dead this throws
+                dynamic sw = (dynamic)_swApp;
+                _ = (int)sw.GetProcessID();
                 return true;
-            }
-            catch (COMException)
-            {
-                ResetState();
-                return false;
-            }
-            catch (InvalidComObjectException)
-            {
-                ResetState();
-                return false;
             }
             catch
             {
-                ResetState();
+                // COM object is dead — clean up
+                ReleaseCom();
                 return false;
             }
         }
 
         /// <summary>
         /// Returns the active document as <c>object</c>, or <c>null</c>.
-        /// Attempts automatic reconnection when the COM reference is stale.
+        /// Calls <see cref="ReleaseCom"/> when the COM reference is stale.
         /// </summary>
         public object GetActiveDocument()
         {
@@ -136,28 +133,22 @@ namespace CreateChertAndRazverka.Core
                 object  doc = null;
 
                 try { doc = sw.ActiveDoc; }
-                catch (COMException) { ResetState(); return null; }
-                catch (InvalidComObjectException) { ResetState(); return null; }
+                catch (COMException) { ReleaseCom(); return null; }
+                catch (InvalidComObjectException) { ReleaseCom(); return null; }
                 catch { /* ignore other errors */ }
 
                 if (doc == null)
                 {
                     try { doc = sw.IActiveDoc2; }
-                    catch (COMException) { ResetState(); return null; }
-                    catch (InvalidComObjectException) { ResetState(); return null; }
-                    catch { /* ignore */ }
-                }
-
-                if (doc == null)
-                {
-                    try { doc = sw.GetFirstDocument(); }
+                    catch (COMException) { ReleaseCom(); return null; }
+                    catch (InvalidComObjectException) { ReleaseCom(); return null; }
                     catch { /* ignore */ }
                 }
 
                 return doc;
             }
-            catch (COMException) { ResetState(); return null; }
-            catch (InvalidComObjectException) { ResetState(); return null; }
+            catch (COMException) { ReleaseCom(); return null; }
+            catch (InvalidComObjectException) { ReleaseCom(); return null; }
             catch { return null; }
         }
 
@@ -168,11 +159,13 @@ namespace CreateChertAndRazverka.Core
         {
             if (_swApp != null)
             {
-                try { Marshal.FinalReleaseComObject(_swApp); }
-                catch { /* ignore */ }
                 LogHelper.Log("Отключено от SolidWorks.", LogLevel.Info);
+                ReleaseCom();
             }
-            ResetState();
+            else
+            {
+                _isConnected = false;
+            }
         }
 
         // ── IDisposable ───────────────────────────────────────────────────────────
@@ -188,9 +181,14 @@ namespace CreateChertAndRazverka.Core
 
         // ── Helpers ───────────────────────────────────────────────────────────────
 
-        private void ResetState()
+        private void ReleaseCom()
         {
-            _swApp       = null;
+            if (_swApp != null)
+            {
+                try { Marshal.FinalReleaseComObject(_swApp); }
+                catch { /* ignore */ }
+                _swApp = null;
+            }
             _isConnected = false;
         }
     }
