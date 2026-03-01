@@ -101,7 +101,7 @@ namespace CreateChertAndRazverka.Core
                     ComponentName = Path.GetFileName(assemblyFilePath),
                     Status        = ResultStatus.Success,
                     Message       = "Сборочный чертёж создан",
-                    OutputFile    = outputPath
+                    OutputPath    = outputPath
                 };
             }
             catch (Exception ex)
