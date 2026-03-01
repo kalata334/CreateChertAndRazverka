@@ -69,6 +69,19 @@ namespace CreateChertAndRazverka.Core
             {
                 try { currentPath = (string)doc.GetPathName(); }
                 catch { /* SW may throw when switching docs */ }
+
+                // For unsaved documents GetPathName() returns an empty string —
+                // fall back to the window title so the monitor can still track changes.
+                if (string.IsNullOrEmpty(currentPath))
+                {
+                    try
+                    {
+                        string title = (string)doc.GetTitle();
+                        if (!string.IsNullOrEmpty(title))
+                            currentPath = "[Несохранённый] " + title;
+                    }
+                    catch { /* ignore */ }
+                }
             }
 
             if (currentPath == _lastDocPath) return;
@@ -91,7 +104,9 @@ namespace CreateChertAndRazverka.Core
             {
                 Type        = type,
                 FilePath    = currentPath,
-                FileName    = System.IO.Path.GetFileName(currentPath),
+                FileName    = currentPath.StartsWith("[")
+                    ? currentPath   // unsaved document — use the decorated title as filename
+                    : System.IO.Path.GetFileName(currentPath),
                 IsSheetMetal = isSheetMetal
             };
 
