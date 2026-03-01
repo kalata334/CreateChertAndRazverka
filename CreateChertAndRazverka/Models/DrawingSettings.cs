@@ -19,6 +19,11 @@ namespace CreateChertAndRazverka.Models
         public bool ExportToPdf       { get; set; } = true;
         public bool AutoDimensions    { get; set; } = true;
 
+        // User-selected drawing template paths (empty = use SolidWorks default)
+        public string DrawingTemplatePath         { get; set; } = "";
+        public string FlatPatternTemplatePath     { get; set; } = "";
+        public string AssemblyDrawingTemplatePath { get; set; } = "";
+
         /// <summary>
         /// Returns the SolidWorks paper size enum value for the selected sheet format.
         /// swDwgPaperSizes_e: A4 = 9, A3 = 8, A2 = 7, A1 = 6, A0 = 5

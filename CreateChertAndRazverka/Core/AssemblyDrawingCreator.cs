@@ -41,7 +41,7 @@ namespace CreateChertAndRazverka.Core
                     return Error(assemblyFilePath, $"Не удалось открыть сборку (err={docErr}).");
 
                 dynamic drawingDoc = swApp.NewDocument(
-                    GetDrawingTemplatePath(swApp),
+                    GetDrawingTemplatePath(swApp, settings.AssemblyDrawingTemplatePath),
                     settings.GetSwPaperSize(),
                     0.297, 0.210);
 
@@ -166,8 +166,11 @@ namespace CreateChertAndRazverka.Core
             }
         }
 
-        private string GetDrawingTemplatePath(dynamic swApp)
+        private string GetDrawingTemplatePath(dynamic swApp, string userTemplate)
         {
+            if (!string.IsNullOrEmpty(userTemplate) && File.Exists(userTemplate))
+                return userTemplate;
+
             try
             {
                 string path = swApp.GetUserPreferenceStringValue(13);

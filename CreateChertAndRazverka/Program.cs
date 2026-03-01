@@ -12,24 +12,9 @@ namespace CreateChertAndRazverka
             // Регистрируем резолвер ПЕРВЫМ — до любого использования SolidWorks типов
             InteropResolver.Register();
 
-            if (!AdminHelper.IsRunningAsAdmin())
-            {
-                if (!Array.Exists(args, a => a == "--restarted"))
-                {
-                    AdminHelper.RestartAsAdmin();
-                    Environment.Exit(0);
-                }
-                else
-                {
-                    MessageBox.Show(
-                        "CreateChert And Razverka не может быть запущен без прав администратора.\n" +
-                        "Взаимодействие с SolidWorks 2022 через COM API требует повышенных привилегий.",
-                        "CreateChert And Razverka — Ошибка прав доступа",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
-                    Environment.Exit(1);
-                }
-            }
+            // НЕ проверяем права администратора — это мешает подключению к SolidWorks
+            // (COM GetActiveObject не работает если программа запущена с повышенными правами,
+            //  а SolidWorks — без них, из-за Session 0 Isolation / UIPI)
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
