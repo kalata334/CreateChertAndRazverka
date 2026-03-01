@@ -1,0 +1,5 @@
+# Пути для поиска SolidWorks Interop DLL (по одному пути на строку)
+# Строки, начинающиеся с #, игнорируются
+# Пример:
+# D:\MySolidWorks\SOLIDWORKS\api\redist
+# E:\SolidWorks2022\api\redist

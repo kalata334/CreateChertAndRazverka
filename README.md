@@ -60,6 +60,37 @@ CreateChertAndRazverka.sln
     └── setup.iss                     — скрипт установщика Inno Setup
 ```
 
+## Автоматический поиск SolidWorks Interop DLL
+
+Программа **автоматически** ищет SolidWorks Interop DLL при запуске. Ручное копирование DLL не требуется.
+
+### Порядок поиска при запуске
+
+При старте программа регистрирует `AssemblyResolve`-обработчик, который ищет DLL в следующем порядке:
+
+1. Пути из файла `InteropPaths.txt` (рядом с exe) — пользовательские пути
+2. `D:\Solid\SolidWorks1\SOLIDWORKS\api\redist\` — путь пользователя
+3. `C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\api\redist\` — стандартный путь
+4. `C:\Program Files\SolidWorks Corp\SOLIDWORKS\api\redist\` — альтернативный путь
+5. Реестр Windows: `HKLM\SOFTWARE\SolidWorks\SOLIDWORKS 2022\Setup\SolidWorks Folder`
+6. Папка рядом с exe файлом программы
+
+### Указать путь вручную (InteropPaths.txt)
+
+Если SolidWorks установлен в нестандартное место, откройте файл `InteropPaths.txt`
+(находится рядом с exe или в папке проекта) и добавьте свой путь:
+
+```
+# Пути для поиска SolidWorks Interop DLL (по одному пути на строку)
+E:\MySolidWorks\SOLIDWORKS\api\redist
+```
+
+### Pre-Build Event (автокопирование при сборке)
+
+При сборке проекта автоматически запускается скрипт `CopyInteropDlls.bat`, который
+копирует DLL из найденного пути в папку `References\`. Это позволяет использовать
+раннее связывание (early-binding) без ручного копирования файлов.
+
 ## Сборка без SolidWorks Interop DLL (по умолчанию)
 
 Приложение использует **позднее связывание (late-binding / dynamic)** для вызова COM API SolidWorks. Это означает, что **SolidWorks Interop DLL не требуются** для компиляции проекта.
