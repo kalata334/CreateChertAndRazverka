@@ -12,106 +12,33 @@ namespace CreateChertAndRazverka.Core
     /// </summary>
     public class SolidWorksConnector : IDisposable
     {
-        private const string SwProgId = "SldWorks.Application.30"; // SolidWorks 2022
+        private readonly SwConnectionManager _connectionMgr = new SwConnectionManager();
+        private bool                         _disposed;
 
-        private dynamic _swApp;
-        private bool    _disposed;
-
-        public bool IsConnected => _swApp != null;
+        /// <summary>True when we have a live COM reference to SolidWorks.</summary>
+        public bool IsConnected => _connectionMgr.IsConnected;
 
         /// <summary>
         /// Returns the raw ISldWorks / SldWorks.Application COM object.
         /// </summary>
-        public dynamic SwApp => _swApp;
+        public dynamic SwApp => _connectionMgr.SwApp;
 
         /// <summary>
         /// Attempts to attach to an already running SolidWorks instance.
         /// Does NOT start SolidWorks if it is not running.
         /// Tries versioned ProgID first, then falls back to the generic ProgID.
         /// </summary>
-        public bool TryConnect()
-        {
-            try
-            {
-                _swApp = Marshal.GetActiveObject(SwProgId);
-                LogHelper.Log("Подключено к SolidWorks 2022.", LogLevel.Success);
-                return true;
-            }
-            catch (COMException) { /* try fallback */ }
-            catch (Exception ex)
-            {
-                LogHelper.Log("Ошибка подключения к SolidWorks (versioned): " + ex.Message, LogLevel.Warning);
-            }
-
-            // Fallback: try generic ProgID (works when program runs without elevation)
-            try
-            {
-                _swApp = Marshal.GetActiveObject("SldWorks.Application");
-                LogHelper.Log("Подключено к SolidWorks (generic ProgID).", LogLevel.Success);
-                return true;
-            }
-            catch (COMException) { /* not running */ }
-            catch (Exception ex)
-            {
-                LogHelper.Log("Ошибка подключения к SolidWorks: " + ex.Message, LogLevel.Error);
-            }
-
-            // Last fallback: check if SLDWORKS process is running and try again
-            try
-            {
-                var swProcesses = System.Diagnostics.Process.GetProcessesByName("SLDWORKS");
-                bool isRunning = swProcesses.Length > 0;
-                foreach (var p in swProcesses) p.Dispose();
-
-                if (isRunning)
-                {
-                    _swApp = Marshal.GetActiveObject("SldWorks.Application");
-                    LogHelper.Log("Подключено к SolidWorks (через процесс).", LogLevel.Success);
-                    return true;
-                }
-            }
-            catch { /* ignore */ }
-
-            _swApp = null;
-            return false;
-        }
+        public bool TryConnect() => _connectionMgr.TryConnect();
 
         /// <summary>
         /// Disconnects from SolidWorks and releases the COM reference.
         /// </summary>
-        public void Disconnect()
-        {
-            if (_swApp != null)
-            {
-                try { Marshal.ReleaseComObject(_swApp); }
-                catch { /* ignore */ }
-                _swApp = null;
-                LogHelper.Log("Отключено от SolidWorks.", LogLevel.Info);
-            }
-        }
+        public void Disconnect() => _connectionMgr.Disconnect();
 
         /// <summary>
         /// Returns the currently active document or null if none is open.
         /// </summary>
-        public dynamic GetActiveDocument()
-        {
-            if (_swApp == null) return null;
-            try
-            {
-                dynamic doc = null;
-                try { doc = _swApp.ActiveDoc; }
-                catch { /* ignore */ }
-
-                if (doc == null)
-                {
-                    try { doc = _swApp.IActiveDoc2; }
-                    catch { /* ignore */ }
-                }
-
-                return doc;
-            }
-            catch { return null; }
-        }
+        public dynamic GetActiveDocument() => (dynamic)_connectionMgr.GetActiveDocument();
 
         /// <summary>
         /// Determines the DocumentType by inspecting the file extension of the active document path.
