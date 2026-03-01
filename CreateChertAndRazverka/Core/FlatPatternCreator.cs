@@ -64,20 +64,28 @@ namespace CreateChertAndRazverka.Core
                 if (drawingDoc == null)
                     return Error(partFilePath, "Не удалось создать документ развёртки.");
 
-                // Insert flat-pattern view
+                // Insert flat-pattern view using the dedicated SolidWorks API
                 string partPath = (string)partDoc.GetPathName();
-                dynamic fpView = drawingDoc.CreateDrawViewFromModelView3(
-                    partPath, "Flat-Pattern1", 0.12, 0.18, 0);
+                dynamic fpView = null;
+                try
+                {
+                    // CreateFlatPatternView: available in SW 2012+ for sheet-metal flat patterns
+                    fpView = drawingDoc.CreateFlatPatternView(partPath, 0, 0, false, null);
+                }
+                catch { /* older API version — use fallback below */ }
 
                 if (fpView == null)
                 {
-                    // Try alternate flat-pattern feature name
+                    // Fallback: use the standard SM-FLAT-PATTERN configuration name
+                    string flatConfig = FindFlatPatternConfig(partDoc);
                     fpView = drawingDoc.CreateDrawViewFromModelView3(
-                        partPath, "*Flat-Pattern", 0.12, 0.18, 0);
+                        partPath, "SM-FLAT-PATTERN", 0.12, 0.18, 0);
+                    if (fpView != null && !string.IsNullOrEmpty(flatConfig))
+                        fpView.ReferencedConfiguration = flatConfig;
                 }
 
                 if (fpView != null)
-                    fpView.ScaleDecimal = 1.0;
+                    ScaleFlatPatternView(fpView, settings.SheetFormat);
 
                 // Auto-dimensions on flat pattern
                 if (settings.AutoDimensions)
@@ -123,6 +131,89 @@ namespace CreateChertAndRazverka.Core
             {
                 return Error(partFilePath, ex.Message);
             }
+        }
+
+        private static string FindFlatPatternConfig(dynamic partDoc)
+        {
+            try
+            {
+                object[] configs = (object[])partDoc.GetConfigurationNames();
+                if (configs == null) return null;
+                foreach (object cfg in configs)
+                {
+                    string name = cfg as string;
+                    if (name != null && name.ToUpperInvariant().Contains("FLAT"))
+                        return name;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private static void ScaleFlatPatternView(dynamic fpView, string sheetFormat)
+        {
+            try
+            {
+                double W = GetPaperWidth(sheetFormat);
+                double H = GetPaperHeight(sheetFormat);
+                double curScale = 1.0;
+                try { curScale = (double)fpView.ScaleDecimal; } catch { }
+                if (curScale <= 0) curScale = 1.0;
+
+                double[] outline = null;
+                try { outline = (double[])fpView.GetOutline(); } catch { }
+                if (outline != null && outline.Length >= 4)
+                {
+                    double vw = Math.Abs(outline[2] - outline[0]);
+                    double vh = Math.Abs(outline[3] - outline[1]);
+                    if (vw > 0 && vh > 0)
+                    {
+                        // Target: flat pattern fills 70 % of the sheet (single large view)
+                        const double flatFraction = 0.70;
+                        double sx = (W * flatFraction) / vw * curScale;
+                        double sy = (H * flatFraction) / vh * curScale;
+                        double newScale = FloorToStandardScale(Math.Min(sx, sy));
+                        if (newScale > 0)
+                            fpView.ScaleDecimal = newScale;
+                        return;
+                    }
+                }
+                fpView.ScaleDecimal = 1.0;
+            }
+            catch { try { fpView.ScaleDecimal = 1.0; } catch { } }
+        }
+
+        private static double GetPaperWidth(string sheetFormat)
+        {
+            switch (sheetFormat)
+            {
+                case "A0": return 1.189;
+                case "A1": return 0.841;
+                case "A2": return 0.594;
+                case "A3": return 0.420;
+                default:   return 0.297; // A4
+            }
+        }
+
+        private static double GetPaperHeight(string sheetFormat)
+        {
+            switch (sheetFormat)
+            {
+                case "A0": return 0.841;
+                case "A1": return 0.594;
+                case "A2": return 0.420;
+                case "A3": return 0.297;
+                default:   return 0.210; // A4
+            }
+        }
+
+        private static double FloorToStandardScale(double s)
+        {
+            double[] standards = { 0.05, 0.1, 0.2, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 2.5, 5.0, 10.0 };
+            double best = standards[0];
+            foreach (double std in standards)
+                if (std <= s) best = std;
+            return best;
         }
 
         private void UnsuppressFlatPattern(dynamic partDoc)

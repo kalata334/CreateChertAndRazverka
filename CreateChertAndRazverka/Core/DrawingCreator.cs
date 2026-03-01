@@ -65,7 +65,10 @@ namespace CreateChertAndRazverka.Core
 
                 // Insert standard views: front, top, right, isometric
                 dynamic sheet = drawingDoc.GetCurrentSheet();
-                InsertStandardViews(drawingDoc, partDoc);
+                InsertStandardViews(drawingDoc, partDoc, settings);
+                double sheetW = GetPaperWidth(settings.SheetFormat);
+                double sheetH = GetPaperHeight(settings.SheetFormat);
+                AutoScaleViews(drawingDoc, sheetW, sheetH);
 
                 // Auto-dimensions
                 if (settings.AutoDimensions)
@@ -116,31 +119,112 @@ namespace CreateChertAndRazverka.Core
             }
         }
 
-        private void InsertStandardViews(dynamic drawingDoc, dynamic partDoc)
+        private void InsertStandardViews(dynamic drawingDoc, dynamic partDoc, DrawingSettings settings)
         {
             try
             {
                 string partPath = (string)partDoc.GetPathName();
-                // Standard front view at position (0.10, 0.15)
-                dynamic view = drawingDoc.CreateDrawViewFromModelView3(
-                    partPath, "*Front", 0.10, 0.15, 0);
+                double W = GetPaperWidth(settings.SheetFormat);
+                double H = GetPaperHeight(settings.SheetFormat);
 
-                if (view != null)
+                double frontX = W * 0.28, frontY = H * 0.38;
+                double topX   = W * 0.28, topY   = H * 0.78;
+                double rightX = W * 0.65, rightY = H * 0.38;
+                double isoX   = W * 0.72, isoY   = H * 0.75;
+
+                dynamic frontView = drawingDoc.CreateDrawViewFromModelView3(
+                    partPath, "*Front", frontX, frontY, 0);
+
+                if (frontView != null)
                 {
-                    view.ScaleDecimal = 1.0;
-                    // Project top view
-                    drawingDoc.CreateUnfoldedViewFromModelView(view, 2, 0.10, 0.27, 0);
-                    // Project right view
-                    drawingDoc.CreateUnfoldedViewFromModelView(view, 3, 0.22, 0.15, 0);
+                    // Project top view (above front)
+                    drawingDoc.CreateUnfoldedViewFromModelView(frontView, 2, topX, topY, 0);
+                    // Activate front view and project right view
+                    drawingDoc.ActivateView(frontView.Name);
+                    drawingDoc.CreateUnfoldedViewAt3(rightX, rightY, 0, false);
                     // Isometric view
-                    drawingDoc.CreateDrawViewFromModelView3(
-                        partPath, "*Isometric", 0.22, 0.27, 0);
+                    drawingDoc.CreateDrawViewFromModelView3(partPath, "*Isometric", isoX, isoY, 0);
                 }
             }
             catch (Exception ex)
             {
                 LogHelper.Log("Предупреждение при вставке видов: " + ex.Message, LogLevel.Warning);
             }
+        }
+
+        private void AutoScaleViews(dynamic drawingDoc, double sheetW, double sheetH)
+        {
+            // Allow each view to use at most 35 % of the sheet dimension
+            const double maxFraction = 0.35;
+            try
+            {
+                object[] sheets = (object[])drawingDoc.GetViews();
+                if (sheets == null) return;
+
+                foreach (object sheetObj in sheets)
+                {
+                    object[] sheetViews = (object[])sheetObj;
+                    if (sheetViews == null) continue;
+                    for (int i = 1; i < sheetViews.Length; i++)
+                    {
+                        dynamic view = sheetViews[i];
+                        if (view == null) continue;
+                        try
+                        {
+                            double curScale = (double)view.ScaleDecimal;
+                            if (curScale <= 0) curScale = 1.0;
+
+                            double[] outline = (double[])view.GetOutline();
+                            if (outline == null || outline.Length < 4) continue;
+                            double vw = Math.Abs(outline[2] - outline[0]);
+                            double vh = Math.Abs(outline[3] - outline[1]);
+                            if (vw <= 0 || vh <= 0) continue;
+
+                            double sx = (sheetW * maxFraction) / vw * curScale;
+                            double sy = (sheetH * maxFraction) / vh * curScale;
+                            double newScale = FloorToStandardScale(Math.Min(sx, sy));
+                            if (newScale > 0 && Math.Abs(newScale - curScale) > 1e-4)
+                                view.ScaleDecimal = newScale;
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+            try { drawingDoc.ForceRebuild3(false); } catch { }
+        }
+
+        private static double GetPaperWidth(string sheetFormat)
+        {
+            switch (sheetFormat)
+            {
+                case "A0": return 1.189;
+                case "A1": return 0.841;
+                case "A2": return 0.594;
+                case "A3": return 0.420;
+                default:   return 0.297; // A4
+            }
+        }
+
+        private static double GetPaperHeight(string sheetFormat)
+        {
+            switch (sheetFormat)
+            {
+                case "A0": return 0.841;
+                case "A1": return 0.594;
+                case "A2": return 0.420;
+                case "A3": return 0.297;
+                default:   return 0.210; // A4
+            }
+        }
+
+        private static double FloorToStandardScale(double s)
+        {
+            double[] standards = { 0.05, 0.1, 0.2, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 2.5, 5.0, 10.0 };
+            double best = standards[0];
+            foreach (double std in standards)
+                if (std <= s) best = std;
+            return best;
         }
 
         private string GetDrawingTemplatePath(dynamic swApp, string userTemplate)

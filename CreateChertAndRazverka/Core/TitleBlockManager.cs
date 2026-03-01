@@ -61,6 +61,41 @@ namespace CreateChertAndRazverka.Core
                 }
 
                 drawingDoc.GraphicsRedraw2();
+
+                // Also write author/name directly into sheet-format note text boxes
+                try
+                {
+                    drawingDoc.EditSheetFormat();
+                    object[] notes = null;
+                    try { notes = (object[])drawingDoc.GetNotes(); } catch { }
+                    if (notes != null)
+                    {
+                        foreach (object noteObj in notes)
+                        {
+                            if (noteObj == null) continue;
+                            try
+                            {
+                                dynamic note = noteObj;
+                                string text = null;
+                                try { text = (string)note.GetText(); } catch { }
+                                if (string.IsNullOrEmpty(text)) continue;
+                                string upper = text.ToUpperInvariant();
+                                if (upper.Contains("РАЗРАБ") || upper.Contains("DRAWN"))
+                                    note.SetText(author);
+                                else if (upper.Contains("НАИМЕНОВ") || upper.Contains("TITLE"))
+                                    note.SetText(documentName);
+                                // Both name ("Наименование") and designation ("Обозначение") receive
+                                // the same documentName value so that both stamp cells are populated.
+                                else if (upper.Contains("ОБОЗНАЧ") || upper.Contains("DESIGNATION"))
+                                    note.SetText(documentName);
+                            }
+                            catch { }
+                        }
+                    }
+                    drawingDoc.EditSheet();
+                }
+                catch { /* older template may not support sheet-format note editing */ }
+
                 LogHelper.Log("Штамп заполнен.", LogLevel.Info);
             }
             catch (Exception ex)
