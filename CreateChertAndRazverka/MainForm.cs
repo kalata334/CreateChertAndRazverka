@@ -404,11 +404,20 @@ namespace CreateChertAndRazverka
 
         private void btnResetTemplates_Click(object sender, EventArgs e)
         {
-            txtDrawingTemplate.Text     = "";
-            txtFlatPatternTemplate.Text = "";
-            txtAssemblyTemplate.Text    = "";
+            string defaultDir = SettingsManager.DefaultTemplatesPath;
+            string defaultDrawTemplate = "";
+            if (Directory.Exists(defaultDir))
+            {
+                var drwdots = Directory.GetFiles(defaultDir, "*.drwdot");
+                Array.Sort(drwdots);
+                if (drwdots.Length > 0)
+                    defaultDrawTemplate = drwdots[0];
+            }
+            txtDrawingTemplate.Text     = defaultDrawTemplate;
+            txtFlatPatternTemplate.Text = defaultDrawTemplate;
+            txtAssemblyTemplate.Text    = defaultDrawTemplate;
             SaveTemplateSettings();
-            LogHelper.Log("Шаблоны сброшены — будут использованы стандартные шаблоны SolidWorks.", LogLevel.Info);
+            LogHelper.Log($"Шаблоны сброшены. Папка шаблонов: {defaultDir}", LogLevel.Info);
         }
 
         private string BrowseTemplateFile(string currentPath)
@@ -421,6 +430,8 @@ namespace CreateChertAndRazverka
                            + "|Все файлы (*.*)|*.*";
                 if (!string.IsNullOrEmpty(currentPath) && File.Exists(currentPath))
                     dlg.InitialDirectory = Path.GetDirectoryName(currentPath);
+                else if (Directory.Exists(SettingsManager.DefaultTemplatesPath))
+                    dlg.InitialDirectory = SettingsManager.DefaultTemplatesPath;
                 return dlg.ShowDialog(this) == DialogResult.OK ? dlg.FileName : null;
             }
         }

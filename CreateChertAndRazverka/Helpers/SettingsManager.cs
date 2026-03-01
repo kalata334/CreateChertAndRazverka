@@ -20,6 +20,10 @@ namespace CreateChertAndRazverka.Helpers
 
     public static class SettingsManager
     {
+        /// <summary>Default SolidWorks 2022 templates folder.</summary>
+        public const string DefaultTemplatesPath =
+            @"C:\ProgramData\SOLIDWORKS\SOLIDWORKS 2022\templates";
+
         private static string SettingsFilePath => Path.Combine(
             Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "",
             "settings.json");

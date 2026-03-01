@@ -96,12 +96,26 @@ namespace CreateChertAndRazverka.Core
         public dynamic GetActiveDocument()
         {
             if (_swApp == null) return null;
-            try { return _swApp.IActiveDoc2; }
+            try
+            {
+                dynamic doc = null;
+                try { doc = _swApp.ActiveDoc; }
+                catch { /* ignore */ }
+
+                if (doc == null)
+                {
+                    try { doc = _swApp.IActiveDoc2; }
+                    catch { /* ignore */ }
+                }
+
+                return doc;
+            }
             catch { return null; }
         }
 
         /// <summary>
-        /// Determines the DocumentType from the SolidWorks GetType() return value.
+        /// Determines the DocumentType by inspecting the file extension of the active document path.
+        /// Falls back to probing SolidWorks-specific methods when the document has not yet been saved.
         /// swDocPART=1, swDocASSEMBLY=2, swDocDRAWING=3
         /// </summary>
         public static DocumentType GetDocumentType(dynamic doc)
@@ -109,14 +123,40 @@ namespace CreateChertAndRazverka.Core
             if (doc == null) return DocumentType.None;
             try
             {
-                int t = (int)doc.GetType();
-                switch (t)
+                // Primary: use file extension — most reliable with dynamic COM objects
+                string path = null;
+                try { path = (string)doc.GetPathName(); } catch { }
+
+                if (!string.IsNullOrEmpty(path))
                 {
-                    case 1: return DocumentType.Part;
-                    case 2: return DocumentType.Assembly;
-                    case 3: return DocumentType.Drawing;
-                    default: return DocumentType.None;
+                    string ext = System.IO.Path.GetExtension(path).ToLowerInvariant();
+                    switch (ext)
+                    {
+                        case ".sldprt": return DocumentType.Part;
+                        case ".sldasm": return DocumentType.Assembly;
+                        case ".slddrw": return DocumentType.Drawing;
+                    }
                 }
+
+                // Fallback for unsaved documents: probe for assembly/drawing-specific members
+                try
+                {
+                    doc.GetComponents(true);
+                    return DocumentType.Assembly;
+                }
+                catch { /* not an assembly */ }
+
+                try
+                {
+                    doc.GetFirstView();
+                    return DocumentType.Drawing;
+                }
+                catch { /* not a drawing */ }
+
+                // Default to Part when nothing else matches
+                string title = null;
+                try { title = (string)doc.GetTitle(); } catch { }
+                return string.IsNullOrEmpty(title) ? DocumentType.None : DocumentType.Part;
             }
             catch { return DocumentType.None; }
         }
@@ -132,10 +172,19 @@ namespace CreateChertAndRazverka.Core
                 dynamic feat = partDoc.FirstFeature();
                 while (feat != null)
                 {
-                    string typeName = feat.GetTypeName2();
-                    if (typeName == "SheetMetal" || typeName == "SMFlatPattern")
-                        return true;
-                    feat = feat.GetNextFeature();
+                    try
+                    {
+                        string typeName = (string)feat.GetTypeName2();
+                        if (typeName == "SheetMetal"    || typeName == "SMFlatPattern"  ||
+                            typeName == "SMBaseFlange"  || typeName == "BaseFlange"     ||
+                            typeName == "EdgeFlange"    || typeName == "FlatPattern"    ||
+                            typeName == "SMMiteredFlange")
+                            return true;
+                    }
+                    catch { /* skip feature that cannot be inspected */ }
+
+                    try { feat = feat.GetNextFeature(); }
+                    catch { break; }
                 }
                 return false;
             }
