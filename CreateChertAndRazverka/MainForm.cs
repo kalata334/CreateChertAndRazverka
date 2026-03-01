@@ -224,8 +224,9 @@ namespace CreateChertAndRazverka
                         if (string.IsNullOrEmpty(path) || seen.Contains(path)) continue;
                         seen.Add(path);
 
-                        int typeInt    = (int)modelDoc.GetType();
-                        ComponentType ct = typeInt == 2 ? ComponentType.Assembly : ComponentType.Part;
+                        // Assembly components are either parts (.sldprt) or sub-assemblies (.sldasm)
+                        string compExt = System.IO.Path.GetExtension(path).ToLowerInvariant();
+                        ComponentType ct = compExt == ".sldasm" ? ComponentType.Assembly : ComponentType.Part;
                         bool sm = ct == ComponentType.Part && SolidWorksConnector.IsSheetMetal(modelDoc);
 
                         _components.Add(new ComponentInfo
@@ -321,7 +322,11 @@ namespace CreateChertAndRazverka
             dynamic doc = _connector.GetActiveDocument();
             DocumentType type = SolidWorksConnector.GetDocumentType(doc);
             string path = null;
-            try { path = doc?.GetPathName(); } catch { }
+            if (doc != null)
+            {
+                try { path = (string)doc.GetPathName(); }
+                catch { }
+            }
 
             var state = new DocumentState
             {
