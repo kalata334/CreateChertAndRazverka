@@ -220,7 +220,7 @@ namespace CreateChertAndRazverka
                         dynamic modelDoc = comp.GetModelDoc2();
                         if (modelDoc == null) continue;
 
-                        string path = modelDoc.GetPathName();
+                        string path = (string)modelDoc.GetPathName();
                         if (string.IsNullOrEmpty(path) || seen.Contains(path)) continue;
                         seen.Add(path);
 

@@ -26,7 +26,8 @@ namespace CreateChertAndRazverka.Core
             try
             {
                 // Iterate over all drawing views on the active sheet
-                object[] views = drawingDoc.GetCurrentSheet()?.GetViews() as object[];
+                dynamic sheet = drawingDoc.GetCurrentSheet();
+                object[] views = sheet != null ? sheet.GetViews() as object[] : null;
                 if (views == null || views.Length == 0) return;
 
                 foreach (dynamic view in views)

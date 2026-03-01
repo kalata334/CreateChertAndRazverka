@@ -120,7 +120,7 @@ namespace CreateChertAndRazverka.Core
         {
             try
             {
-                string partPath = partDoc.GetPathName();
+                string partPath = (string)partDoc.GetPathName();
                 // Standard front view at position (0.10, 0.15)
                 dynamic view = drawingDoc.CreateDrawViewFromModelView3(
                     partPath, "*Front", 0.10, 0.15, 0);

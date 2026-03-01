@@ -48,7 +48,7 @@ namespace CreateChertAndRazverka.Core
                 if (drawingDoc == null)
                     return Error(assemblyFilePath, "Не удалось создать документ чертежа.");
 
-                string asmPath = asmDoc.GetPathName();
+                string asmPath = (string)asmDoc.GetPathName();
 
                 // Insert isometric view of the whole assembly
                 dynamic isoView = drawingDoc.CreateDrawViewFromModelView3(
