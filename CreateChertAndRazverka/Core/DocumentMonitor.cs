@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Forms;
+using CreateChertAndRazverka.Helpers;
 using CreateChertAndRazverka.Models;
 
 namespace CreateChertAndRazverka.Core
@@ -31,6 +32,19 @@ namespace CreateChertAndRazverka.Core
         public void Stop()  => _timer.Stop();
 
         private void OnTick(object sender, EventArgs e)
+        {
+            try
+            {
+                OnTickCore();
+            }
+            catch (Exception ex)
+            {
+                try { LogHelper.Log("Ошибка в DocumentMonitor: " + ex.Message, LogLevel.Warning); }
+                catch { /* log failed – do not propagate */ }
+            }
+        }
+
+        private void OnTickCore()
         {
             // Try to connect if not connected
             if (!_connector.IsConnected)
