@@ -77,6 +77,7 @@
     <Compile Include="Core\DrawingCreator.cs" />
     <Compile Include="Core\FlatPatternCreator.cs" />
     <Compile Include="Core\SolidWorksConnector.cs" />
+    <Compile Include="Core\SwConnectionManager.cs" />
     <Compile Include="Core\TitleBlockManager.cs" />
     <Compile Include="Helpers\AdminHelper.cs" />
     <Compile Include="Helpers\FileHelper.cs" />
