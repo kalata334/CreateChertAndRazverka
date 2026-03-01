@@ -11,7 +11,7 @@ namespace CreateChertAndRazverka.Core
     {
         private readonly SolidWorksConnector _connector;
         private readonly Timer               _timer;
-        private string                       _lastDocPath = "";
+        private string                       _lastDocPath = "__UNINITIALIZED__";
         private bool                         _disposed;
 
         // ── Events ──────────────────────────────────────────────────────────────
@@ -49,9 +49,13 @@ namespace CreateChertAndRazverka.Core
 
             dynamic doc = _connector.GetActiveDocument();
 
+            // ИСПРАВЛЕНИЕ: НЕ использовать ?. с dynamic — это не работает в .NET Framework 4.8!
             string currentPath = null;
-            try { currentPath = doc?.GetPathName(); }
-            catch { /* SW may throw when switching docs */ }
+            if (doc != null)
+            {
+                try { currentPath = (string)doc.GetPathName(); }
+                catch { /* SW may throw when switching docs */ }
+            }
 
             if (currentPath == _lastDocPath) return;
 
